@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Fatiga y Somnolencia</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --border: rgba(0,0,0,0.10);
+    --border-md: rgba(0,0,0,0.18);
+    --accent: #0f6e56;
+    --accent-light: #e1f5ee;
+    --accent-mid: #1d9e75;
+    --danger: #a32d2d;
+    --danger-light: #fcebeb;
+    --warning: #854f0b;
+    --warning-light: #faeeda;
+    --success: #3b6d11;
+    --success-light: #eaf3de;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --card: #242422;
+      --text: #e8e6e0;
+      --muted: #9a9890;
+      --border: rgba(255,255,255,0.08);
+      --border-md: rgba(255,255,255,0.15);
+      --accent: #5dcaa5;
+      --accent-light: #04342c;
+      --accent-mid: #1d9e75;
+      --danger: #f09595;
+      --danger-light: #501313;
+      --warning: #fac775;
+      --warning-light: #412402;
+      --success: #97c459;
+      --success-light: #173404;
+    }
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .container {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-md);
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .logo-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+  }
+
+  .reg-tag {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .section {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+    margin-bottom: 0.75rem;
+    padding-left: 2px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .info-field {
+    background: var(--card);
+    border: 0.5px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+  }
+
+  .info-field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+  }
+
+  .info-field input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    color: var(--text);
+    font-family: 'Arial', sans-serif;
+    outline: none;
+  }
+
+  .info-field input::placeholder { color: var(--muted); opacity: 0.5; }
+
+  .questions-card {
+    background: var(--card);
+    border: 0.5px solid var(--border-md);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .question-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 0.5px solid var(--border);
+    gap: 16px;
+    transition: background 0.15s;
+  }
+
+  .question-item:last-child { border-bottom: none; }
+  .question-item:hover { background: var(--bg); }
+
+  .q-text {
+    font-size: 14px;
+    line-height: 1.5;
+    font-family: 'Arial', sans-serif;
+    flex: 1;
+  }
+
+  .toggle-group {
+    display: flex;
+    border: 0.5px solid var(--border-md);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .toggle-btn {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-family: 'Arial', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .toggle-btn + .toggle-btn {
+    border-left: 0.5px solid var(--border-md);
+  }
+
+  .toggle-btn.active-si {
+    background: var(--danger-light);
+    color: var(--danger);
+  }
+
+  .toggle-btn.active-no {
+    background: var(--success-light);
+    color: var(--success);
+  }
+
+  .lake-card {
+    background: var(--card);
+    border: 0.5px solid var(--border-md);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .lake-header {
+    padding: 12px 18px;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border-md);
+  }
+
+  .lake-header-text {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+  }
+
+  .lake-item {
+    padding: 13px 18px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lake-item:last-child { border-bottom: none; }
+
+  .lake-q {
+    font-size: 14px;
+    font-family: 'Arial', sans-serif;
+    flex: 1;
+    line-height: 1.4;
+  }
+
+  .score-group {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .score-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 0.5px solid var(--border-md);
+    background: transparent;
+    font-size: 14px;
+    font-family: 'Arial', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--muted);
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .score-btn:hover { background: var(--bg); }
+
+  .score-btn.active-0 { background: var(--success-light); color: var(--success); border-color: var(--success); }
+  .score-btn.active-1 { background: var(--warning-light); color: var(--warning); border-color: var(--warning); }
+  .score-btn.active-2 { background: rgba(186,117,23,0.15); color: #854f0b; border-color: #854f0b; }
+  .score-btn.active-3 { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+
+  .score-labels {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 8px 18px 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .score-label {
+    width: 34px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+  }
+
+  .result-bar {
+    display: none;
+    margin-top: 1.5rem;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-family: 'Arial', sans-serif;
+  }
+
+  .result-bar.show { display: block; }
+
+  .result-bar.ok { background: var(--success-light); border: 1px solid var(--success); }
+  .result-bar.warn { background: var(--warning-light); border: 1px solid var(--warning); }
+  .result-bar.danger { background: var(--danger-light); border: 1px solid var(--danger); }
+
+  .result-bar .r-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .result-bar.ok .r-title { color: var(--success); }
+  .result-bar.warn .r-title { color: var(--warning); }
+  .result-bar.danger .r-title { color: var(--danger); }
+
+  .result-bar .r-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    opacity: 0.85;
+  }
+
+  .submit-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-evaluate {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 28px;
+    font-size: 15px;
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-evaluate:hover { opacity: 0.88; }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--muted);
+    border: 0.5px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-size: 14px;
+    font-family: 'Arial', sans-serif;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .btn-reset:hover { background: var(--bg); }
+
+  .lake-score-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--bg);
+    border-top: 0.5px solid var(--border-md);
+  }
+
+  .lake-score-label {
+    font-size: 12px;
+    font-family: 'Arial', sans-serif;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  .lake-score-num {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: 'Arial', sans-serif;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .alert-inline {
+    background: var(--warning-light);
+    border-left: 3px solid var(--warning);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-family: 'Arial', sans-serif;
+    color: var(--text);
+    margin-top: 1rem;
+    display: none;
+    line-height: 1.5;
+  }
+
+  .alert-inline.show { display: block; }
+
+  footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 12px;
+    font-family: 'Arial', sans-serif;
+    color: var(--muted);
+  }
+
+  @media (max-width: 480px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .submit-row { flex-direction: column; align-items: stretch; }
+    .btn-evaluate, .btn-reset { text-align: center; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-row">
+      <span class="logo-badge">Servial</span>
+      <span class="reg-tag">Reg. 68 · Rev. 01</span>
+    </div>
+    <h1>Control de Fatiga<br>y Somnolencia</h1>
+    <p class="subtitle">Completar antes de iniciar la conducción. El cansancio es una de las principales causas de accidentes.</p>
+  </header>
+
+  <div class="section">
+    <p class="section-title">Datos del conductor</p>
+    <div class="info-grid">
+      <div class="info-field">
+        <label>Conductor</label>
+        <input type="text" placeholder="Nombre completo" id="nombre">
+      </div>
+      <div class="info-field">
+        <label>Patente</label>
+        <input type="text" placeholder="AA-BB-00" id="patente">
+      </div>
+      <div class="info-field">
+        <label>Fecha</label>
+        <input type="date" id="fecha">
+      </div>
+      <div class="info-field">
+        <label>Hora salida</label>
+        <input type="time" id="hora">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-title">1 · Síntomas de fatiga</p>
+    <div class="questions-card" id="questions-container">
+
+      <div class="question-item" data-q="sueño">
+        <span class="q-text">¿Tiene sueño o siente sus párpados pesados?</span>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleQ(this,'sueño','SI')">Sí</button>
+          <button class="toggle-btn" onclick="toggleQ(this,'sueño','NO')">No</button>
+        </div>
+      </div>
+
+      <div class="question-item" data-q="cansancio">
+        <span class="q-text">¿Se siente cansado o con falta de energía?</span>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleQ(this,'cansancio','SI')">Sí</button>
+          <button class="toggle-btn" onclick="toggleQ(this,'cansancio','NO')">No</button>
+        </div>
+      </div>
+
+      <div class="question-item" data-q="atencion">
+        <span class="q-text">¿Siente dificultad para concentrarse o prestar atención?</span>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleQ(this,'atencion','SI')">Sí</button>
+          <button class="toggle-btn" onclick="toggleQ(this,'atencion','NO')">No</button>
+        </div>
+      </div>
+
+      <div class="question-item" data-q="alcohol">
+        <span class="q-text">¿Ha consumido alcohol en las últimas 24 horas?</span>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleQ(this,'alcohol','SI')">Sí</button>
+          <button class="toggle-btn" onclick="toggleQ(this,'alcohol','NO')">No</button>
+        </div>
+      </div>
+
+      <div class="question-item" data-q="descanso">
+        <span class="q-text">¿Hubo interrupciones en su descanso la noche anterior?</span>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleQ(this,'descanso','SI')">Sí</button>
+          <button class="toggle-btn" onclick="toggleQ(this,'descanso','NO')">No</button>
+        </div>
+      </div>
+
+      <div class="question-item" data-q="condiciones">
+        <span class="q-text">¿Se siente en condiciones físicas y psicológicas de manejar?</span>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleQ(this,'condiciones','SI')">Sí</button>
+          <button class="toggle-btn" onclick="toggleQ(this,'condiciones','NO')">No</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-title">2 · Encuesta Lake Louise</p>
+    <div class="lake-card">
+
+      <div class="score-labels">
+        <span class="score-label">Nulo</span>
+        <span class="score-label">Leve</span>
+        <span class="score-label">Mod.</span>
+        <span class="score-label">Incap.</span>
+      </div>
+
+      <div class="lake-item">
+        <span class="lake-q">Dolor de cabeza</span>
+        <div class="score-group" id="lake-1">
+          <button class="score-btn" onclick="setLake(1,0,this)">0</button>
+          <button class="score-btn" onclick="setLake(1,1,this)">1</button>
+          <button class="score-btn" onclick="setLake(1,2,this)">2</button>
+          <button class="score-btn" onclick="setLake(1,3,this)">3</button>
+        </div>
+      </div>
+
+      <div class="lake-item">
+        <span class="lake-q">Náuseas o pérdida de apetito</span>
+        <div class="score-group" id="lake-2">
+          <button class="score-btn" onclick="setLake(2,0,this)">0</button>
+          <button class="score-btn" onclick="setLake(2,1,this)">1</button>
+          <button class="score-btn" onclick="setLake(2,2,this)">2</button>
+          <button class="score-btn" onclick="setLake(2,3,this)">3</button>
+        </div>
+      </div>
+
+      <div class="lake-item">
+        <span class="lake-q">Fatiga o debilidad general</span>
+        <div class="score-group" id="lake-3">
+          <button class="score-btn" onclick="setLake(3,0,this)">0</button>
+          <button class="score-btn" onclick="setLake(3,1,this)">1</button>
+          <button class="score-btn" onclick="setLake(3,2,this)">2</button>
+          <button class="score-btn" onclick="setLake(3,3,this)">3</button>
+        </div>
+      </div>
+
+      <div class="lake-item">
+        <span class="lake-q">Mareo o vértigo</span>
+        <div class="score-group" id="lake-4">
+          <button class="score-btn" onclick="setLake(4,0,this)">0</button>
+          <button class="score-btn" onclick="setLake(4,1,this)">1</button>
+          <button class="score-btn" onclick="setLake(4,2,this)">2</button>
+          <button class="score-btn" onclick="setLake(4,3,this)">3</button>
+        </div>
+      </div>
+
+      <div class="lake-item">
+        <span class="lake-q">Dificultad para dormir</span>
+        <div class="score-group" id="lake-5">
+          <button class="score-btn" onclick="setLake(5,0,this)">0</button>
+          <button class="score-btn" onclick="setLake(5,1,this)">1</button>
+          <button class="score-btn" onclick="setLake(5,2,this)">2</button>
+          <button class="score-btn" onclick="setLake(5,3,this)">3</button>
+        </div>
+      </div>
+
+      <div class="lake-score-display">
+        <span class="lake-score-label">Puntaje total</span>
+        <span class="lake-score-num" id="lake-total">—</span>
+      </div>
+    </div>
+
+    <div class="alert-inline" id="lake-alert">
+      ⚠️ Puntaje elevado o síntoma incapacitante detectado. Se debe trasladar al conductor al policlínico más cercano para evaluación médica antes de proceder.
+    </div>
+  </div>
+
+  <div class="submit-row">
+    <button class="btn-evaluate" onclick="evaluate()">Evaluar resultado</button>
+    <button class="btn-reset" onclick="resetForm()">Limpiar formulario</button>
+  </div>
+
+  <div class="result-bar" id="result-bar">
+    <div class="r-title" id="result-title"></div>
+    <div class="r-text" id="result-text"></div>
+  </div>
+
+  <div id="email-section" style="display:none; margin-top:1.25rem;">
+    <div class="questions-card" style="padding:16px 18px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; font-family:Arial,sans-serif; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em;">Enviar copia a</span>
+        <span style="font-size:14px; font-family:Arial,sans-serif; color:var(--accent); font-weight:500;">spizarro@serviall.cl</span>
+      </div>
+      <button class="btn-evaluate" id="btn-send" onclick="sendEmail()" style="width:100%; text-align:center; padding:11px;">
+        Enviar resultado por correo
+      </button>
+      <div id="email-status" style="font-size:13px; font-family:Arial,sans-serif; text-align:center; min-height:16px; color:var(--muted);"></div>
+    </div>
+  </div>
+
+  <footer>
+    Control de Fatiga y Somnolencia · Reg. 68 Rev. 01 · Servial
+  </footer>
+
+</div>
+
+<script>
+  const answers = {};
+  const lakeScores = {};
+  let lastResult = '';
+
+  document.getElementById('fecha').valueAsDate = new Date();
+
+  // Reemplaza esta URL con la que obtienes al publicar tu Google Apps Script
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeLxXVdrRSTrMB4u6QB6ATYkA4Zq2M6fpWcqgRGZSVuOAAsdZ7TA_1GpGQhQpvyzg/exec';
+
+  function toggleQ(btn, key, val) {
+    const group = btn.parentElement;
+    group.querySelectorAll('.toggle-btn').forEach(b => {
+      b.classList.remove('active-si', 'active-no');
+    });
+    btn.classList.add(val === 'SI' ? 'active-si' : 'active-no');
+    answers[key] = val;
+    updateLakeAlert();
+  }
+
+  function setLake(num, score, btn) {
+    const group = document.getElementById('lake-' + num);
+    group.querySelectorAll('.score-btn').forEach(b => {
+      b.classList.remove('active-0','active-1','active-2','active-3');
+    });
+    btn.classList.add('active-' + score);
+    lakeScores[num] = score;
+    const total = Object.values(lakeScores).reduce((a,b) => a+b, 0);
+    document.getElementById('lake-total').textContent = total;
+    const el = document.getElementById('lake-total');
+    el.style.color = total >= 6 ? 'var(--danger)' : total >= 3 ? 'var(--warning)' : 'var(--success)';
+    updateLakeAlert();
+  }
+
+  function updateLakeAlert() {
+    const total = Object.values(lakeScores).reduce((a,b) => a+b, 0);
+    const hasIncap = Object.values(lakeScores).some(s => s === 3);
+    const alert = document.getElementById('lake-alert');
+    if (total > 6 || hasIncap) alert.classList.add('show');
+    else alert.classList.remove('show');
+  }
+
+  function evaluate() {
+    const rb = document.getElementById('result-bar');
+    const rt = document.getElementById('result-title');
+    const rx = document.getElementById('result-text');
+
+    const blockers = ['sueño','cansancio','alcohol'];
+    const hasBlocker = blockers.some(k => answers[k] === 'SI');
+    const notFit = answers['condiciones'] === 'NO';
+    const total = Object.values(lakeScores).reduce((a,b) => a+b, 0);
+    const hasIncap = Object.values(lakeScores).some(s => s === 3);
+
+    rb.classList.remove('ok','warn','danger');
+    rb.classList.add('show');
+
+    if (hasBlocker || notFit || total > 6 || hasIncap) {
+      rb.classList.add('danger');
+      rt.textContent = '🔴 No apto para conducir';
+      rx.textContent = 'El conductor presenta indicadores de riesgo que impiden la conducción segura. Se debe notificar al SPS y proceder según protocolo. No autorizar la salida.';
+      lastResult = 'NO APTO';
+    } else if (answers['descanso'] === 'SI' || total >= 3) {
+      rb.classList.add('warn');
+      rt.textContent = '🟡 Autorización condicional';
+      rx.textContent = 'Hay factores que requieren evaluación por parte del SPS antes de autorizar la salida. El supervisor debe revisar y firmar antes de proceder.';
+      lastResult = 'CONDICIONAL';
+    } else {
+      rb.classList.add('ok');
+      rt.textContent = '🟢 Apto para conducir';
+      rx.textContent = 'El conductor no presenta indicadores de riesgo significativos. Puede proceder con la conducción. El SPS debe revisar y firmar la autorización.';
+      lastResult = 'APTO';
+    }
+
+    document.getElementById('email-section').style.display = 'block';
+    document.getElementById('email-status').textContent = '';
+  }
+
+  function buildEmailBody() {
+    const qLabels = {
+      'sueño':      '¿Tiene sueño o párpados pesados?',
+      'cansancio':  '¿Se siente cansado?',
+      'atencion':   '¿Dificultad para concentrarse?',
+      'alcohol':    '¿Consumió alcohol (últimas 24h)?',
+      'descanso':   '¿Hubo interrupciones en su descanso?',
+      'condiciones':'¿Se siente apto para manejar?'
+    };
+    const lakeLabels = {1:'Dolor de cabeza',2:'Náuseas/pérdida de apetito',3:'Fatiga o debilidad',4:'Mareo o vértigo',5:'Dificultad para dormir'};
+    const lakeTotal = Object.values(lakeScores).reduce((a,b) => a+b, 0);
+
+    let body = `CONTROL DE FATIGA Y SOMNOLENCIA\nReg. 68 Rev. 01 — Servial\n`;
+    body += `${'─'.repeat(40)}\n`;
+    body += `Conductor : ${document.getElementById('nombre').value || '—'}\n`;
+    body += `Patente   : ${document.getElementById('patente').value || '—'}\n`;
+    body += `Fecha     : ${document.getElementById('fecha').value || '—'}\n`;
+    body += `Hora      : ${document.getElementById('hora').value || '—'}\n`;
+    body += `\n── SECCIÓN 1: Síntomas de fatiga ──\n`;
+    Object.entries(qLabels).forEach(([k,label]) => {
+      body += `${label}\n  → ${answers[k] || 'Sin respuesta'}\n`;
+    });
+    body += `\n── SECCIÓN 2: Lake Louise ──\n`;
+    Object.entries(lakeLabels).forEach(([k,label]) => {
+      const score = lakeScores[k] !== undefined ? lakeScores[k] : '—';
+      const lvl = ['Nulo','Leve','Moderado','Incapacitante'];
+      body += `${label}: ${score} (${typeof score === 'number' ? lvl[score] : '—'})\n`;
+    });
+    body += `Puntaje total: ${lakeTotal}\n`;
+    body += `\n${'─'.repeat(40)}\n`;
+    body += `RESULTADO: ${lastResult}\n`;
+    body += `${'─'.repeat(40)}\n`;
+    return body;
+  }
+
+  async function sendEmail() {
+    const btn = document.getElementById('btn-send');
+    const status = document.getElementById('email-status');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    status.style.color = 'var(--muted)';
+    status.textContent = 'Enviando correo...';
+
+    try {
+      const payload = {
+        conductor: document.getElementById('nombre').value || '—',
+        patente:   document.getElementById('patente').value || '—',
+        fecha:     document.getElementById('fecha').value || '—',
+        hora:      document.getElementById('hora').value || '—',
+        resultado: lastResult,
+        detalle:   buildEmailBody()
+      };
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (data.status === 'ok') {
+        status.style.color = 'var(--success)';
+        status.textContent = '✓ Correo enviado correctamente a spizarro@serviall.cl';
+        btn.textContent = 'Correo enviado ✓';
+      } else {
+        throw new Error(data.message || 'Error desconocido');
+      }
+    } catch(e) {
+      status.style.color = 'var(--danger)';
+      status.textContent = 'Error al enviar. Verifica la URL del Apps Script.';
+      btn.disabled = false;
+      btn.textContent = 'Reintentar envío';
+    }
+  }
+
+  function resetForm() {
+    Object.keys(answers).forEach(k => delete answers[k]);
+    Object.keys(lakeScores).forEach(k => delete lakeScores[k]);
+    lastResult = '';
+
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active-si','active-no'));
+    document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('active-0','active-1','active-2','active-3'));
+
+    document.getElementById('lake-total').textContent = '—';
+    document.getElementById('lake-total').style.color = '';
+    document.getElementById('lake-alert').classList.remove('show');
+
+    const rb = document.getElementById('result-bar');
+    rb.classList.remove('show','ok','warn','danger');
+
+    document.getElementById('email-section').style.display = 'none';
+    document.getElementById('email-status').textContent = '';
+    const btn = document.getElementById('btn-send');
+    btn.disabled = false;
+    btn.textContent = 'Enviar resultado por correo';
+
+    document.getElementById('nombre').value = '';
+    document.getElementById('patente').value = '';
+    document.getElementById('hora').value = '';
+    document.getElementById('fecha').valueAsDate = new Date();
+  }
+</script>
+</body>
+</html>
