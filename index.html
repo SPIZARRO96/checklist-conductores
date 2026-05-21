@@ -60,6 +60,11 @@ h1{font-size:24px;font-weight:700;margin:1rem 0 .4rem;line-height:1.3;color:#fff
 #lake-total{font-size:22px;font-weight:600}
 .alert{display:none;background:var(--warn-light);border-left:3px solid var(--warn);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:10px 14px;font-size:12px;color:var(--text);margin-top:1rem;line-height:1.5}
 .alert.show{display:block}
+.field.error{border:1.5px solid var(--danger)!important;background:var(--danger-light)!important}
+.field.error label{color:var(--danger)!important}
+.card-error{border:1.5px solid var(--danger)!important}
+.error-msg{display:none;color:var(--danger);font-size:12px;font-family:Arial,sans-serif;margin-top:0.5rem;padding:8px 12px;background:var(--danger-light);border-radius:var(--radius-sm);border-left:3px solid var(--danger)}
+.error-msg.show{display:block}
 .btns{display:flex;gap:10px;margin-top:1.5rem;flex-wrap:wrap}
 .btn-main{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:12px 28px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn-main:hover{opacity:.88}
@@ -92,12 +97,12 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
     <span style="font-size:12px;color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.7)">Reg. 68 · Rev. 01</span>
   </div>
   <h1>Control de Fatiga<br>y Somnolencia</h1>
-  <p class="sub">Completar antes de iniciar la conducción.</p>
+  <p class="sub">Completar antes de iniciar tus labores diarias.</p>
 </header>
 
 <p class="section-label">Datos del trabajador</p>
 <div class="info-grid">
-  <div class="field"><label>Conductor</label><input type="text" id="nombre" placeholder="Nombre completo"></div>
+  <div class="field"><label>Trabajador</label><input type="text" id="nombre" placeholder="Nombre completo"></div>
   <div class="field"><label>Área</label>
 <select id="area" style="width:100%;border:none;background:transparent;font-size:15px;color:var(--text);outline:none;cursor:pointer">
   <option value="">Seleccionar...</option>
@@ -105,10 +110,12 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
   <option value="RECEPCION">Recepción</option>
   <option value="EXPRESS">Express</option>
   <option value="ADMIN">Admin/Cond.</option>
+  <option value="SUPERVISION">Supervisión</option>
 </select></div>
   <div class="field"><label>Fecha</label><div id="fecha" style="font-size:15px;color:var(--text);padding-top:2px"></div></div>
   <div class="field"><label>Hora</label><div id="hora" style="font-size:15px;color:var(--text);padding-top:2px"></div></div>
 </div>
+<div class="error-msg" id="err-datos">⚠ Completa los datos del trabajador (nombre y área).</div>
 
 <p class="section-label">1 · Síntomas de fatiga</p>
 <div class="card">
@@ -125,6 +132,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
   <div class="qrow"><span class="qtxt">¿Se siente apto físicamente y psicológicamente para desempeñar sus funciones?</span>
     <div class="tg"><button class="tb" onclick="setQ('condiciones',this,'SI')">Sí</button><button class="tb" onclick="setQ('condiciones',this,'NO')">No</button></div></div>
 </div>
+<div class="error-msg" id="err-preguntas">⚠ Responde todas las preguntas de esta sección.</div>
 
 <p class="section-label">2 · Encuesta Lake Louise</p>
 <div class="card">
@@ -142,6 +150,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
   <div class="lake-foot"><span>Puntaje total</span><span id="lake-total">0</span></div>
 </div>
 
+<div class="error-msg" id="err-lake">⚠ Selecciona un puntaje para todos los síntomas de la Encuesta Lake Louise.</div>
 <div class="alert" id="lake-alert">⚠️ Puntaje elevado o síntoma incapacitante. Trasladar al conductor al policlínico más cercano.</div>
 
 <div class="btns">
@@ -168,7 +177,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
 var ans = {};
 var lake = {};
 var ultimoResultado = '';
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx86C-TmvaF7k9ix-QfwazDwlBCQd1V0z-0PTeScxtWwg5B6Qr1wf1jEPYCCeu6twpf/exec';
+var SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT';
 
 function actualizarFechaHora() {
   var now = new Date();
@@ -220,26 +229,38 @@ function evaluar() {
   var nombre = document.getElementById('nombre').value.trim();
   var fecha = document.getElementById('fecha').textContent.trim();
   var hora = document.getElementById('hora').textContent.trim();
-
   var area = document.getElementById('area').value;
-  if (!nombre || !fecha || !hora || !area) {
-    alert('Por favor completa todos los datos del trabajador (nombre, área, fecha y hora) antes de evaluar.');
-    return;
-  }
 
-  // Validar que todas las preguntas estén respondidas
+  // Clear previous errors
+  document.querySelectorAll('.field').forEach(function(f){ f.classList.remove('error'); });
+  document.querySelectorAll('.error-msg').forEach(function(e){ e.classList.remove('show'); });
+  document.getElementById('questions-card') && document.getElementById('questions-card').classList.remove('card-error');
+
+  var hayError = false;
+
+  // Validate datos
+  if (!nombre) { document.getElementById('nombre').closest('.field').classList.add('error'); hayError = true; }
+  if (!area)   { document.getElementById('area').closest('.field').classList.add('error'); hayError = true; }
+  if (hayError) { document.getElementById('err-datos').classList.add('show'); }
+
+  // Validate preguntas
   var preguntas = ['sueno','cansancio','atencion','alcohol','descanso','condiciones'];
-  var sinResponder = preguntas.filter(function(k) { return !ans[k]; });
+  var sinResponder = preguntas.filter(function(k){ return !ans[k]; });
   if (sinResponder.length > 0) {
-    alert('Por favor responde todas las preguntas de la sección 1 antes de evaluar.');
-    return;
+    document.getElementById('err-preguntas').classList.add('show');
+    hayError = true;
   }
 
-  // Validar Lake Louise
+  // Validate lake
   var lakePreguntas = [1,2,3,4,5];
-  var lakeSinResponder = lakePreguntas.filter(function(k) { return lake[k] === undefined; });
+  var lakeSinResponder = lakePreguntas.filter(function(k){ return lake[k] === undefined; });
   if (lakeSinResponder.length > 0) {
-    alert('Por favor responde todos los síntomas de la Encuesta Lake Louise antes de evaluar.');
+    document.getElementById('err-lake').classList.add('show');
+    hayError = true;
+  }
+
+  if (hayError) {
+    document.querySelector('.error-msg.show').scrollIntoView({behavior:'smooth', block:'center'});
     return;
   }
 
@@ -255,7 +276,7 @@ function evaluar() {
   el.className = 'result show ' + (noApto ? 'danger' : condicional ? 'warn' : 'ok');
 
   if (noApto) {
-    document.getElementById('rtitle').textContent = 'No apto para conducir';
+    document.getElementById('rtitle').textContent = 'No apto para trabajar';
     document.getElementById('rtext').textContent = 'El conductor presenta indicadores de riesgo. No autorizar la salida. Notificar al SPS de inmediato.';
     ultimoResultado = 'NO APTO';
   } else if (condicional) {
@@ -263,8 +284,8 @@ function evaluar() {
     document.getElementById('rtext').textContent = 'Hay factores que requieren revisión del SPS antes de autorizar la salida.';
     ultimoResultado = 'CONDICIONAL';
   } else {
-    document.getElementById('rtitle').textContent = 'Apto para conducir';
-    document.getElementById('rtext').textContent = 'El conductor no presenta indicadores de riesgo. Puede proceder. El SPS debe firmar la autorización.';
+    document.getElementById('rtitle').textContent = 'Apto para trabajar';
+    document.getElementById('rtext').textContent = 'El trabajador no presenta indicadores de riesgo. Puede proceder. El SPS debe firmar la autorización.';
     ultimoResultado = 'APTO';
   }
 
@@ -272,7 +293,8 @@ function evaluar() {
     'DESPACHO': 'yrincon@serviall.cl',
     'RECEPCION': 'aaguirre@serviall.cl',
     'EXPRESS': 'jbarrera@serviall.cl',
-    'ADMIN': 'spizarro@serviall.cl'
+    'ADMIN': 'spizarro@serviall.cl',
+    'SUPERVISION': 'spizarro@serviall.cl'
   };
   var areaVal = document.getElementById('area').value;
   document.getElementById('email-dest').textContent = areaEmails2[areaVal] || 'spizarro@serviall.cl';
@@ -287,7 +309,7 @@ function buildDetalle() {
   var total = 0;
   for (var k in lake) total += lake[k];
   var area = document.getElementById('area').value || '-';
-  var areaLabels = {'DESPACHO':'Despacho','RECEPCION':'Recepción','EXPRESS':'Express','ADMIN':'Admin/Cond.'};
+  var areaLabels = {'DESPACHO':'Despacho','RECEPCION':'Recepción','EXPRESS':'Express','ADMIN':'Admin/Cond.','SUPERVISION':'Supervisión'};
   var txt = '';
   txt += 'Area: ' + (areaLabels[area] || area) + '\n';
   txt += '--- SECCION 1: Sintomas ---\n';
@@ -320,7 +342,8 @@ function enviarCorreo() {
     'DESPACHO': 'yrincon@serviall.cl',
     'RECEPCION': 'aaguirre@serviall.cl',
     'EXPRESS': 'jbarrera@serviall.cl',
-    'ADMIN': 'spizarro@serviall.cl'
+    'ADMIN': 'spizarro@serviall.cl',
+    'SUPERVISION': 'spizarro@serviall.cl'
   };
   var destinatario = areaEmails[area] || 'spizarro@serviall.cl';
 
@@ -358,6 +381,8 @@ function enviarCorreo() {
 
 function limpiar() {
   ans = {}; lake = {}; ultimoResultado = '';
+  document.querySelectorAll('.field').forEach(function(f){ f.classList.remove('error'); });
+  document.querySelectorAll('.error-msg').forEach(function(e){ e.classList.remove('show'); });
   document.querySelectorAll('.tb').forEach(function(b) { b.className = 'tb'; });
   document.querySelectorAll('.sb').forEach(function(b) { b.className = 'sb'; });
   document.getElementById('lake-total').textContent = '0';
