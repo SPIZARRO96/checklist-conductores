@@ -95,12 +95,19 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
   <p class="sub">Completar antes de iniciar la conducción.</p>
 </header>
 
-<p class="section-label">Datos del conductor</p>
+<p class="section-label">Datos del trabajador</p>
 <div class="info-grid">
   <div class="field"><label>Conductor</label><input type="text" id="nombre" placeholder="Nombre completo"></div>
-  <div class="field"><label>Patente</label><input type="text" id="patente" placeholder="AA-BB-00"></div>
-  <div class="field"><label>Fecha</label><input type="date" id="fecha"></div>
-  <div class="field"><label>Hora salida</label><input type="time" id="hora"></div>
+  <div class="field"><label>Área</label>
+<select id="area" style="width:100%;border:none;background:transparent;font-size:15px;color:var(--text);outline:none;cursor:pointer">
+  <option value="">Seleccionar...</option>
+  <option value="DESPACHO">Despacho</option>
+  <option value="RECEPCION">Recepción</option>
+  <option value="EXPRESS">Express</option>
+  <option value="ADMIN">Admin/Cond.</option>
+</select></div>
+  <div class="field"><label>Fecha</label><div id="fecha" style="font-size:15px;color:var(--text);padding-top:2px"></div></div>
+  <div class="field"><label>Hora</label><div id="hora" style="font-size:15px;color:var(--text);padding-top:2px"></div></div>
 </div>
 
 <p class="section-label">1 · Síntomas de fatiga</p>
@@ -149,7 +156,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
 
 <div class="email-box" id="email-box">
   <div class="lbl">Enviar copia a</div>
-  <div class="addr">spizarro@serviall.cl</div>
+  <div class="addr" id="email-dest">—</div>
   <button class="btn-main" id="btn-send" onclick="enviarCorreo()" style="width:100%;text-align:center">Enviar resultado por correo</button>
   <div id="email-status"></div>
 </div>
@@ -161,9 +168,20 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
 var ans = {};
 var lake = {};
 var ultimoResultado = '';
-var SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx86C-TmvaF7k9ix-QfwazDwlBCQd1V0z-0PTeScxtWwg5B6Qr1wf1jEPYCCeu6twpf/exec';
 
-document.getElementById('fecha').valueAsDate = new Date();
+function actualizarFechaHora() {
+  var now = new Date();
+  var dd = String(now.getDate()).padStart(2,'0');
+  var mm = String(now.getMonth()+1).padStart(2,'0');
+  var yyyy = now.getFullYear();
+  var hh = String(now.getHours()).padStart(2,'0');
+  var min = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('fecha').textContent = dd + '/' + mm + '/' + yyyy;
+  document.getElementById('hora').textContent = hh + ':' + min;
+}
+actualizarFechaHora();
+setInterval(actualizarFechaHora, 60000);
 
 function setQ(key, btn, val) {
   var group = btn.parentElement;
@@ -200,12 +218,12 @@ function setLake(num, score, btn) {
 function evaluar() {
   // Validar datos del conductor
   var nombre = document.getElementById('nombre').value.trim();
-  var patente = document.getElementById('patente').value.trim();
-  var fecha = document.getElementById('fecha').value.trim();
-  var hora = document.getElementById('hora').value.trim();
+  var fecha = document.getElementById('fecha').textContent.trim();
+  var hora = document.getElementById('hora').textContent.trim();
 
-  if (!nombre || !fecha || !hora) {
-    alert('Por favor completa los datos del conductor (nombre, fecha y hora) antes de evaluar.');
+  var area = document.getElementById('area').value;
+  if (!nombre || !fecha || !hora || !area) {
+    alert('Por favor completa todos los datos del trabajador (nombre, área, fecha y hora) antes de evaluar.');
     return;
   }
 
@@ -250,6 +268,14 @@ function evaluar() {
     ultimoResultado = 'APTO';
   }
 
+  var areaEmails2 = {
+    'DESPACHO': 'yrincon@serviall.cl',
+    'RECEPCION': 'aaguirre@serviall.cl',
+    'EXPRESS': 'jbarrera@serviall.cl',
+    'ADMIN': 'spizarro@serviall.cl'
+  };
+  var areaVal = document.getElementById('area').value;
+  document.getElementById('email-dest').textContent = areaEmails2[areaVal] || 'spizarro@serviall.cl';
   document.getElementById('email-box').style.display = 'block';
   document.getElementById('email-status').textContent = '';
   document.getElementById('btn-send').disabled = false;
@@ -260,7 +286,10 @@ function buildDetalle() {
   var lv = ['Nulo','Leve','Moderado','Incapacitante'];
   var total = 0;
   for (var k in lake) total += lake[k];
+  var area = document.getElementById('area').value || '-';
+  var areaLabels = {'DESPACHO':'Despacho','RECEPCION':'Recepción','EXPRESS':'Express','ADMIN':'Admin/Cond.'};
   var txt = '';
+  txt += 'Area: ' + (areaLabels[area] || area) + '\n';
   txt += '--- SECCION 1: Sintomas ---\n';
   txt += 'Sueno/parpados: ' + (ans['sueno'] || '-') + '\n';
   txt += 'Cansancio: ' + (ans['cansancio'] || '-') + '\n';
@@ -286,13 +315,23 @@ function enviarCorreo() {
   status.style.color = 'var(--muted)';
   status.textContent = 'Enviando correo...';
 
+  var area = document.getElementById('area').value;
+  var areaEmails = {
+    'DESPACHO': 'yrincon@serviall.cl',
+    'RECEPCION': 'aaguirre@serviall.cl',
+    'EXPRESS': 'jbarrera@serviall.cl',
+    'ADMIN': 'spizarro@serviall.cl'
+  };
+  var destinatario = areaEmails[area] || 'spizarro@serviall.cl';
+
   var payload = {
     conductor: document.getElementById('nombre').value || '-',
-    patente:   document.getElementById('patente').value || '-',
-    fecha:     document.getElementById('fecha').value || '-',
-    hora:      document.getElementById('hora').value || '-',
+    area:      area,
+    fecha:     document.getElementById('fecha').textContent || '-',
+    hora:      document.getElementById('hora').textContent || '-',
     resultado: ultimoResultado,
-    detalle:   buildDetalle()
+    detalle:   buildDetalle(),
+    to_email:  destinatario
   };
 
   fetch(SCRIPT_URL, {
@@ -327,9 +366,21 @@ function limpiar() {
   document.getElementById('result').className = 'result';
   document.getElementById('email-box').style.display = 'none';
   document.getElementById('nombre').value = '';
+  document.getElementById('area').value = '';
   document.getElementById('patente').value = '';
   document.getElementById('hora').value = '';
-  document.getElementById('fecha').valueAsDate = new Date();
+  function actualizarFechaHora() {
+  var now = new Date();
+  var dd = String(now.getDate()).padStart(2,'0');
+  var mm = String(now.getMonth()+1).padStart(2,'0');
+  var yyyy = now.getFullYear();
+  var hh = String(now.getHours()).padStart(2,'0');
+  var min = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('fecha').textContent = dd + '/' + mm + '/' + yyyy;
+  document.getElementById('hora').textContent = hh + ':' + min;
+}
+actualizarFechaHora();
+setInterval(actualizarFechaHora, 60000);
 }
 </script>
 </body>
