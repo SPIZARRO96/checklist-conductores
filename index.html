@@ -127,7 +127,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
     <div class="tg"><button class="tb" onclick="setQ('atencion',this,'SI')">Sí</button><button class="tb" onclick="setQ('atencion',this,'NO')">No</button></div></div>
   <div class="qrow"><span class="qtxt">¿Ha consumido alcohol en las últimas 24 horas?</span>
     <div class="tg"><button class="tb" onclick="setQ('alcohol',this,'SI')">Sí</button><button class="tb" onclick="setQ('alcohol',this,'NO')">No</button></div></div>
-  <div class="qrow"><span class="qtxt">¿Hubo interrupciones en su descanso?</span>
+  <div class="qrow"><span class="qtxt">¿Hubo interrupciones importantes en su descanso?</span>
     <div class="tg"><button class="tb" onclick="setQ('descanso',this,'SI')">Sí</button><button class="tb" onclick="setQ('descanso',this,'NO')">No</button></div></div>
   <div class="qrow"><span class="qtxt">¿Se siente apto físicamente y psicológicamente para desempeñar sus funciones?</span>
     <div class="tg"><button class="tb" onclick="setQ('condiciones',this,'SI')">Sí</button><button class="tb" onclick="setQ('condiciones',this,'NO')">No</button></div></div>
@@ -177,7 +177,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
 var ans = {};
 var lake = {};
 var ultimoResultado = '';
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx86C-TmvaF7k9ix-QfwazDwlBCQd1V0z-0PTeScxtWwg5B6Qr1wf1jEPYCCeu6twpf/exec';
+var SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT';
 
 function actualizarFechaHora() {
   var now = new Date();
