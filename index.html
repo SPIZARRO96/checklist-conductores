@@ -177,7 +177,7 @@ footer{margin-top:3rem;text-align:center;font-size:12px;color:rgba(255,255,255,0
 var ans = {};
 var lake = {};
 var ultimoResultado = '';
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx86C-TmvaF7k9ix-QfwazDwlBCQd1V0z-0PTeScxtWwg5B6Qr1wf1jEPYCCeu6twpf/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcACmXfUVctVsP84X8zpTqc48HdddVXO9ly0soPmiqRmq6gF0G0aIsUqLD8dGhhLzb/exec';
 
 function actualizarFechaHora() {
   var now = new Date();
@@ -357,11 +357,13 @@ function enviarCorreo() {
     to_email:  destinatario
   };
 
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload)
+  var params = Object.keys(payload).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]);
+  }).join('&');
+
+  fetch(SCRIPT_URL + '?' + params, {
+    method: 'GET',
+    mode: 'no-cors'
   })
   .then(function() {
     status.style.color = 'var(--ok)';
